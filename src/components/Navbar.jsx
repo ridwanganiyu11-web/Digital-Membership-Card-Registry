@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi';
-import { ShieldCheck, Layers, CreditCard, Search, Building2, ExternalLink } from 'lucide-react';
+import { ShieldCheck, Layers, CreditCard, Building2, ExternalLink } from 'lucide-react';
 import { botchainTestnet } from '../config/botchain';
 
 export default function Navbar({ activeTab, setActiveTab }) {
@@ -9,11 +9,6 @@ export default function Navbar({ activeTab, setActiveTab }) {
   const { switchChain } = useSwitchChain();
 
   const isCorrectChain = chainId === botchainTestnet.id;
-
-  const truncateAddress = (addr) => {
-    if (!addr) return '';
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  };
 
   return (
     <header className="sticky top-0 z-50 glass-panel border-b border-slate-800 backdrop-blur-md">
@@ -25,14 +20,16 @@ export default function Navbar({ activeTab, setActiveTab }) {
             className="flex items-center space-x-3 cursor-pointer group"
             onClick={() => setActiveTab('home')}
           >
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-600 via-cyan-500 to-indigo-600 p-[2px] shadow-lg shadow-sky-500/20 group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-sky-400" />
-              </div>
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 via-cyan-500 to-indigo-600 p-[2px] shadow-lg shadow-sky-500/25 group-hover:scale-105 transition-transform overflow-hidden">
+              <img 
+                src="/logo.svg" 
+                alt="MemberChain Logo" 
+                className="w-full h-full object-cover rounded-[14px] bg-slate-950" 
+              />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-xl font-bold tracking-tight text-white font-['Space_Grotesk']">
+                <span className="text-xl font-black tracking-tight text-white font-['Space_Grotesk']">
                   Member<span className="text-sky-400">Chain</span>
                 </span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-950/80 text-sky-300 border border-sky-800/60">
@@ -145,4 +142,3 @@ export default function Navbar({ activeTab, setActiveTab }) {
     </header>
   );
 }
-

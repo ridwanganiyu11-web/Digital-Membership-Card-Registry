@@ -1,11 +1,13 @@
 import React, { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toPng } from 'html-to-image';
-import { Download, Share2, Check, ShieldCheck, Sparkles, AlertTriangle, XCircle, Cpu } from 'lucide-react';
+import jsPDF from 'jspdf';
+import { Download, Share2, Check, ShieldCheck, Sparkles, AlertTriangle, XCircle, Cpu, FileText } from 'lucide-react';
 
 export default function DigitalCard({ card, org, onSelectVerify }) {
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Format timestamps
@@ -43,23 +45,51 @@ export default function DigitalCard({ card, org, onSelectVerify }) {
 
   const verifyUrl = `${window.location.origin}/?tab=verify&cardId=${card.id || card.cardId}`;
 
-  const handleDownload = async () => {
+  // Download high-resolution PNG
+  const handleDownloadPng = async () => {
     if (!cardRef.current) return;
     try {
       setDownloading(true);
       const dataUrl = await toPng(cardRef.current, {
         cacheBust: true,
         quality: 0.98,
-        pixelRatio: 2.5
+        pixelRatio: 3
       });
       const link = document.createElement('a');
       link.download = `MemberChain-Card-${card.membershipNumber || card.id}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
-      console.error('Failed to download card:', err);
+      console.error('Failed to download card as PNG:', err);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  // Download Pass as PDF
+  const handleDownloadPdf = async () => {
+    if (!cardRef.current) return;
+    try {
+      setDownloadingPdf(true);
+      const dataUrl = await toPng(cardRef.current, {
+        cacheBust: true,
+        quality: 0.98,
+        pixelRatio: 3
+      });
+
+      // Standard ID Card dimension: 85.6mm x 53.98mm (CR80 standard)
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: [85.6, 54]
+      });
+
+      pdf.addImage(dataUrl, 'PNG', 0, 0, 85.6, 54);
+      pdf.save(`MemberChain-Pass-${card.membershipNumber || card.id}.pdf`);
+    } catch (err) {
+      console.error('Failed to download card as PDF:', err);
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -71,7 +101,7 @@ export default function DigitalCard({ card, org, onSelectVerify }) {
 
   return (
     <div className="flex flex-col items-center">
-      {/* Visual Card (Render target for PNG download) */}
+      {/* Visual Card (Render target for PNG/PDF download) */}
       <div
         ref={cardRef}
         className="w-full max-w-[420px] aspect-[1.62/1] rounded-2xl p-6 relative card-metallic flex flex-col justify-between text-white select-none border border-white/20 shadow-2xl transition-all duration-300"
@@ -181,31 +211,40 @@ export default function DigitalCard({ card, org, onSelectVerify }) {
         </div>
       </div>
 
-      {/* Card Action Controls */}
-      <div className="w-full max-w-[420px] flex items-center justify-between mt-3 px-1">
+      {/* Card Action Controls (PNG, PDF, Share) */}
+      <div className="w-full max-w-[420px] grid grid-cols-3 gap-2 mt-3 px-1">
         <button
-          onClick={handleDownload}
+          onClick={handleDownloadPng}
           disabled={downloading}
-          className="flex-1 mr-2 inline-flex items-center justify-center space-x-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700/80 transition-all shadow-sm active:scale-95"
+          className="inline-flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700/80 transition-all shadow-sm active:scale-95 disabled:opacity-50"
         >
           <Download className="w-3.5 h-3.5 text-sky-400" />
-          <span>{downloading ? 'Exporting...' : 'Download Card'}</span>
+          <span>{downloading ? 'Exporting...' : 'PNG Pass'}</span>
+        </button>
+
+        <button
+          onClick={handleDownloadPdf}
+          disabled={downloadingPdf}
+          className="inline-flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700/80 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+        >
+          <FileText className="w-3.5 h-3.5 text-indigo-400" />
+          <span>{downloadingPdf ? 'Exporting...' : 'PDF Pass'}</span>
         </button>
 
         <button
           onClick={handleCopyLink}
-          className="inline-flex items-center justify-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700/80 transition-all shadow-sm active:scale-95"
+          className="inline-flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700/80 transition-all shadow-sm active:scale-95"
           title="Copy Verification Link"
         >
           {copied ? (
             <>
               <Check className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-emerald-400">Copied!</span>
+              <span className="text-emerald-400 font-bold">Copied!</span>
             </>
           ) : (
             <>
               <Share2 className="w-3.5 h-3.5 text-slate-300" />
-              <span>Share QR Link</span>
+              <span>Share QR</span>
             </>
           )}
         </button>
@@ -213,4 +252,3 @@ export default function DigitalCard({ card, org, onSelectVerify }) {
     </div>
   );
 }
-
